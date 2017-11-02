@@ -4,6 +4,7 @@ global kernel_main:function (kernel_main.end - kernel_main)
 
 extern _term_writestring
 extern _term_init
+extern _term_scroll
 
 SECTION .text   align=16                                ; section number 1, code
 
@@ -19,6 +20,9 @@ kernel_main:; Function begin
         push    cpright
         call    _term_writestring
         add     esp, 4
+        
+        ; Testing scroll
+        call    _term_scroll
         
         leave
         ret

@@ -4,7 +4,7 @@ VGA_WIDTH equ 80
 
 global _strlen:function (_strlen.end - _strlen)
 global _move_cursor:function (_move_cursor.end - _move_cursor)
-global _itoa:function (_itoa.end - itoa)
+global _itoa:function (_itoa.end - _itoa)
 
 SECTION .text   align=16
 
@@ -41,8 +41,8 @@ _move_cursor: ; Function begin - _move_cursor(word xy): BL=x, BH=y
         movzx   eax, bh
         mov     ecx, VGA_WIDTH
         mul     ecx
-        movzx   ecx, bx
-        shr     ecx, 8
+        movzx   ecx, bl
+        ;shr     ecx, 8
         add     eax, ecx
         mov     ecx, eax
         
@@ -78,40 +78,31 @@ _move_cursor: ; Function begin - _move_cursor(word xy): BL=x, BH=y
 
 ; Function _itoa: Convert number to string
 _itoa:
-        push    ebp
-        mov     ebp, esp
-        push    eax
+        enter   4, 0                            ; 4 byte for local var
         push    ebx
-        push    ecx
         push    edx
         
         mov     eax, dword [ebp+8]
-        mov     esi, dword [ebp+12]
-        mov     ebx, eax
-        xor     edx, edx
+        mov     ebx, dword [ebp+12]
+        lea     esi, [ebx+10]             ; mov to 10th byte of the buffer
+        mov     ecx, 10
+        mov     dword [ebp-4], 0                ; init local var to 0
+
+.L1:    xor     edx, edx
+        idiv    ecx
+        add     edx, 0x30
+        dec     esi
+        mov     byte [esi], dl
+        inc     dword [ebp-4]
         
-.L1:    mov     eax, ebx
-        and     eax, 0x0f
-        cmp     eax, 9
-        ja      .L2
-        add     eax, 0x30
-        jmp     .L3
+        cmp     eax, 0
+        jne     .L1
         
-.L2:    add     eax, 0x61
-.L3:    xchg    al, ah
-        mov     dword [esi], eax
-        inc     esi
-        
-        shr     ebx, 4
-        dec     ecx
-        jnz     .L1
-        
-        sub     di, 4
+        mov     eax, esi
+        mov     ecx, [ebp-4]
         
         pop     edx
-        pop     ecx
         pop     ebx
-        pop     eax
         leave
         ret
 .end:

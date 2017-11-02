@@ -12,6 +12,7 @@ global _term_putentryat:function (_term_putentryat.end - _term_putentryat)      
 global _term_putchar:function (_term_putchar.end - _term_putchar)               ; void _term_putchar(char)
 global _term_write:function (_term_write.end - _term_write)                     ; void _term_write(char*, dword)
 global _term_writestring:function (_term_writestring.end - _term_writestring)   ; void _term_writestring(char*)
+global _term_scroll:function (_term_scroll.end - _term_scroll)
 
 extern _strlen                                          ; near
 extern _move_cursor                                     ; near
@@ -19,24 +20,24 @@ extern _move_cursor                                     ; near
 SECTION .text   align=16
 ; Function _term_setxy: set term_row and term_col : BL=x, BH=y
 _term_setxy: ; Function begin
-		push    ebp
-		mov		ebp, esp
-		push	eax
-		push	ebx
+        push    ebp
+        mov     ebp, esp
+        push    eax
+        push    ebx
         
-		movzx   eax, bl                                 ; x
-		mov     dword [term_col], eax
-		movzx   eax, bx                                 ; y
-		shr     eax, 8
-		mov     dword [term_row], eax
+        movzx   eax, bl                                 ; x
+        mov     dword [term_col], eax
+        movzx   eax, bx                                 ; y
+        shr     eax, 8
+        mov     dword [term_row], eax
         
         ; Set cursor to row and col
-		call    _move_cursor
+        call    _move_cursor
         
-		pop     ebx
-		pop     eax
-		leave
-		ret
+        pop     ebx
+        pop     eax
+        leave
+        ret
 ; _term_setxy End of function 
 
 ; Function _term_init: Initialize terminal
@@ -150,7 +151,8 @@ _term_putchar:; Function begin
         inc     eax                                             ; term_row++
         cmp     eax, VGA_HEIGHT                                 ; if term_row == VGA_HEIGHT
         jne     .L3
-        xor     eax, eax                                        ; eax = 0
+        call    _term_scroll                                    ; scroll 1 line up
+        dec     eax                                             ; retain term_row at 24
 .L3:    mov     ebx, eax                                        ; term_row = eax
         shl     ebx, 8
         or      ebx, dword [term_col]
@@ -271,6 +273,22 @@ _term_writestring:; Function begin
 .end:
 ; term_writestring End of function
 
+
+;Function _term_scrolldown: move all line 1 above, and discard the top line
+_term_scroll: ; Function begin
+        enter   0, 0
+        push    ecx
+        
+        mov     edi, 0xB8000                        ; origin of video mem
+        mov     esi, 0xB80A0                        ; 2nd line
+        mov     ecx, 0x780                          ; VGA_WIDTH*24
+        rep     movsw
+        
+.leave: pop     ecx
+        leave
+        ret
+.end:
+; _term_scroll End of function
 
 SECTION .data   align=1                                 ; section number 2, data
 
