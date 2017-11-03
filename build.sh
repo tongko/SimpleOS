@@ -20,16 +20,16 @@ fi
 # Variables
 WORKINGDIR="$HOME"/projects/sos
 SOURCEDIR="$WORKINGDIR"/src
-OUTPUTDIR="$WORKINGDIR"/bin
 OBJDIR="$WORKINGDIR"/obj
 COMPILERDIR="$HOME"/opt/cross/bin
-ISODIR="$WORKINGDIR"/bin/isodir
 OBJLIST=" "
 echo Change directory to working directory...
 cd "$WORKINGDIR"
 
 # Compile to object files
 echo Begin compiling source code.
+rm -rf "$OBJDIR"
+mkdir -p "$OBJDIR"
 
 for f in $SOURCEDIR/$1/*."$1"; do
     echo " "
@@ -63,6 +63,9 @@ echo Finish compiling.
 
 # Link all objects
 echo Linking...
+OUTPUTDIR="$WORKINGDIR"/bin
+rm -rf "$OUTPUTDIR"/boot
+mkdir -p "$OUTPUTDIR"/boot
 if [ "$1" == "c" ]
     then
         i686-elf-gcc -T "$SOURCEDIR"/linker.ld -o "$OUTPUTDIR"/boot/simpleos.bin -ffreestanding -O2 -nostdlib -I"$SOURCEDIR"/"$1"/ $OBJLIST -lgcc
@@ -85,11 +88,14 @@ objcopy --only-keep-debug "$OUTPUTDIR"/boot/simpleos.bin "$OUTPUTDIR"/simpleos.s
 chmod -x "$OUTPUTDIR"/simpleos.sym
 
 # Verify directory exits
+ISODIR="$OUTPUTDIR"/isodir
+echo Createing ISO image...
+rm -rf "$ISODIR"
 ISOBOOT="$ISODIR"/boot
 ISOGRUB="$ISOBOOT"/grub
-
-rm -rf "$ISODIR"
+mkdir -p "$ISOBOOT"
 mkdir -p "$ISOGRUB"
+
 cp "$OUTPUTDIR"/boot/simpleos.bin "$ISOBOOT"/simpleos.bin
 cp "$SOURCEDIR"/grub.cfg "$ISOGRUB"/grub.cfg
 
